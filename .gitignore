@@ -1,1 +1,5 @@
 .env
+__pycache__/
+.files/
+src/test.ipynb
+eaupy rag.code-workspace
