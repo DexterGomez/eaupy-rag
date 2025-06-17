@@ -9,8 +9,13 @@ from typing import Dict, Any, List
 import os
 import uuid
 
+from langfuse import get_client, observe
+
+
 from src.txt_to_string_var import load_txt_to_string
-handbookText = load_txt_to_string("../data/old_handbook/processed/texto_extraido.txt")
+script_dir = os.path.dirname(__file__)
+file_path = os.path.join(script_dir, '..', 'data', 'old_handbook', 'processed', 'texto_extraido.txt')
+handbookText = load_txt_to_string(file_path)
 
 class PersistentChatMessageHistory(BaseChatMessageHistory, BaseModel):
     """Chat message history that actually persists messages"""
@@ -67,12 +72,12 @@ class EffectiveAltruismAgent:
         Your name is EA UP-AI chatbot
 
         Every time you finish an answer, finish it with EA, EA, UPY!!!!
-
-        HERE IS THE WHOLE HANDBOOK:
-
-        {handbookText}
-
         """
+        #HERE IS THE WHOLE HANDBOOK:
+
+        #{handbookText}
+
+        
         
         # Create the prompt template
         self.prompt = ChatPromptTemplate.from_messages([
@@ -114,6 +119,7 @@ class EffectiveAltruismAgent:
             print(f"{i+1}. {msg.type}: {msg.content[:100]}...")
         print("=== END OF HISTORY ===\n")
     
+    @observe
     def generate_response(self, question: str, session_id: str = None) -> str:
         """Generate a response from the agent"""
         if session_id is None:
@@ -124,13 +130,19 @@ class EffectiveAltruismAgent:
         
         # Print history before generating response
         self.print_session_history(session_id)
-        
+
+        langfuse = get_client()
+        langfuse.update_current_trace(session_id=session_id)
+        langfuse.update_current_trace(input=question)
+
         # Generate response
         response = self.runnable_chain.invoke(
             {"question": question},
             config={"session_id": session_id}
         )
         
+        langfuse.update_current_trace(output=response)
+
         # Print history after generating response
         self.print_session_history(session_id)
         

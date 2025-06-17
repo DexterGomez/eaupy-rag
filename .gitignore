@@ -3,3 +3,4 @@ __pycache__/
 .files/
 src/test.ipynb
 eaupy rag.code-workspace
+eaupyRAG.code-workspace

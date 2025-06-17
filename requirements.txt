@@ -1,2 +1,5 @@
-chainlit
+langfuse
+langchain
 langchain_google_genai
+chainlit
+
