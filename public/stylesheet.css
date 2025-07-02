@@ -1,3 +1,8 @@
 a.watermark {
   display: none !important;
 }
+
+#header img[alt="logo"] {
+  height: 50% !important; /* Adjust the height to your desired size */
+  width: auto !important;
+}

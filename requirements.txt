@@ -2,4 +2,7 @@ langfuse
 langchain
 langchain_google_genai
 chainlit
-
+mcp
+langgraph
+langchain-mcp-adapters
+fastmcp

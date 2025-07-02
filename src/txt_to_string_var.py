@@ -1,4 +1,4 @@
-def load_txt_to_string(file_path:str) -> str:
+def load_txt_to_string(file_path:str) -> str|None:
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             content = file.read()
