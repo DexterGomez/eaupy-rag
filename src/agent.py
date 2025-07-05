@@ -53,21 +53,22 @@ class EffectiveAltruismChat:
             self.llm,
             self.tools,
             checkpointer=self.memory,
-            prompt=self.system_prompt
+            #prompt=self.system_prompt,
+            prompt=self.langfuse_prompt.get_langchain_prompt()
         )
 
         self.langfuse.update_current_trace(session_id=str(thread_id))
         self.langfuse.update_current_trace(input=message)
 
         result = await self.agent.ainvoke(
-            {"messages":[HumanMessage(content=message)]},
+            {"messages":message},
             config={
                 "thread_id":str(thread_id),
                 "callbacks":[cb]
                 }  # type: ignore
             )
 
-        #self.langfuse.update_current_trace(output=result.get("messages")[-1].content) # type: ignore
-        self.langfuse.update_current_trace(output=result)
+        self.langfuse.update_current_trace(output=result.get("messages")[-1].content) # type: ignore
+        #self.langfuse.update_current_trace(output=result)
         
         return result
