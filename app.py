@@ -10,6 +10,7 @@ load_dotenv()
 async def start_chat():
     session_id = uuid.uuid4()
     agent = EffectiveAltruismChat()
+
     cl.user_session.set("session_id", session_id)
     cl.user_session.set("agent", agent)
 
@@ -22,7 +23,7 @@ async def process_message(message: cl.Message):
     session_id = cast(uuid.UUID, cl.user_session.get("session_id"))
     agent = cast(EffectiveAltruismChat, cl.user_session.get("agent"))
     
-    response = await agent.response(message=msg, thread_id=session_id)
+    response = await agent.response(message=msg, thread_id=str(session_id))
 
     await cl.Message(
         response.get("messages")[-1].content # type: ignore
