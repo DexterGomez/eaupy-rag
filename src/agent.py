@@ -22,39 +22,33 @@ class EffectiveAltruismChat:
     def __init__(self):
         self.mcp = MultiServerMCPClient(connections=MCP_CLIENT) # type: ignore
 
-        self.memory = InMemorySaver()
-
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash-001",
             temperature=0.7,
             #max_tokens=300
         )
 
+        self.memory = InMemorySaver()
+
         self.langfuse = Langfuse()
     
     @observe()
     async def response(self, message:str, thread_id:uuid.UUID):
+        
+
         self.tools = await self.mcp.get_tools()
 
         cb = CallbackHandler()
 
-        self.langfuse_prompt = self.langfuse.get_prompt("prod")
+        self.langfuse_prompt = self.langfuse.get_prompt("base")
 
-        self.system_prompt = ChatPromptTemplate.from_messages([
-            ("system", self.langfuse_prompt.get_langchain_prompt()),
-            ("placeholder", "{messages}"),
-            ("placeholder", "{agent_scratchpad}")
-            ]
-        )
-
-        self.system_prompt.metadata = {"langfuse_prompt":self.langfuse_prompt}
+        self.system_prompt = self.langfuse_prompt.get_langchain_prompt()
 
         self.agent = create_react_agent(
             self.llm,
             self.tools,
             checkpointer=self.memory,
-            #prompt=self.system_prompt,
-            prompt=self.langfuse_prompt.get_langchain_prompt()
+            prompt=self.system_prompt,
         )
 
         self.langfuse.update_current_trace(session_id=str(thread_id))
