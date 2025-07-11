@@ -17,7 +17,12 @@ MCP_CLIENT = {
 
 class EffectiveAltruismChat:
     def __init__(self):
-        self.model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
+
+        #self.model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
+        #self.model = init_chat_model("gpt-4o-mini", model_provider="openai")
+        self.model = init_chat_model('gpt-4.1-nano', model_provider='openai')
+        #self.model = init_chat_model('gpt-4.1-mini', model_provider='openai')
+
         self.memory = MemorySaver()
         self.graph = None
         self.model_with_tools = None
@@ -25,14 +30,14 @@ class EffectiveAltruismChat:
         self.langfuse = Langfuse()
 
         self.langfuse_prompt = self.langfuse.get_prompt("base")
-        
 
+        self.client = MultiServerMCPClient(MCP_CLIENT)
+        
     async def _initialize(self):
         if self.graph:
             return
         
-        client = MultiServerMCPClient(MCP_CLIENT)
-        tools = await client.get_tools()
+        tools = await self.client.get_tools()
         self.model_with_tools = self.model.bind_tools(tools)
 
         workflow = StateGraph(MessagesState)
@@ -45,9 +50,11 @@ class EffectiveAltruismChat:
         )
         workflow.add_edge('tools','call_model')
 
+        langfuse_handler = CallbackHandler()
+
         self.graph = workflow.compile(checkpointer=self.memory).with_config(
             {
-                "callbacks": [CallbackHandler()], 
+                "callbacks": [langfuse_handler], 
                 #'metadata':{'prompt_version':self.langfuse_prompt.version, 'prompt_name':self.langfuse_prompt.name}
             }
         )
@@ -77,3 +84,23 @@ class EffectiveAltruismChat:
         self.langfuse.update_current_trace(output=result.get("messages")[-1].content)
 
         return result
+
+    @observe(as_type='generation')
+    async def astream_response(self, message:str, thread_id:str):
+
+        await self._initialize()
+
+        config = {'configurable': {'thread_id': thread_id}}
+
+        response = ''
+        
+        with self.langfuse.start_as_current_span(name='EAchat') as root_span:
+            
+            root_span.update_trace(input=message)
+            root_span.update_trace(session_id=thread_id)
+
+            async for msg, meta in self.graph.astream({'messages':message}, config, stream_mode='messages'):
+                response += msg.content
+                yield msg, meta
+
+            root_span.update_trace(output=response)
