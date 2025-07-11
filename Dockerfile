@@ -15,5 +15,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 EXPOSE 8080
-]
+
 CMD /bin/sh -c "cd /app/ea-forum-mcp-server && python -m src.httpServer & cd /app && exec chainlit run --host 0.0.0.0 --port 8080 app.py"
