@@ -1,6 +1,7 @@
 langfuse
 langchain
 langchain_google_genai
+langchain-openai
 chainlit
 mcp
 langgraph
